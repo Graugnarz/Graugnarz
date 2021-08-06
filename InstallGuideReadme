@@ -1,0 +1,77 @@
+Hello, I am new to GitHub and currently overwhelmed by everything it's offering me to do.
+Anyway, I'm here because I had a problem, that I wanted to solve. I was setting an EmulationStation with Batocera.
+Everything went fine until I started Breath of the Wild and realised that I couldn't use gyro aim like I can on Windows using DS4Windows.
+So I googled and quickly stumbled accross TheDrHax' modded "ds4drv". I got it working, but only when launching games directly from Cemu
+and it wouldn't work after a reboot, leaving me setting it up again. I tried stuff out and long story short: Here's a workaround to make
+gyro aim work on Batocera with a DualShock 4 (PS4-Controller).
+
+The following is the final result (or a description of it), so that you know what you will get with this guide.
+Also I'm notresponsible if you mess something up. That being said, let's go!
+
+Result:
+You be able to use the gyro sensor of your DS4 in Batocera on WiiU games, and possibly other emulators that might support it, dunno.
+All you will have to do is connect your Controller not through the Batocera's menu, but by just pressing and holding the PLAYSTATION and SHARE buttons
+until it goes into pairing mode (the LEDs flash quickly), not via USB, only Bluetooth (I think).
+You will do it like this on every boot.
+The controller will work as usual in every other scenario, because we basically just use a different driver. However the controller won't be listed
+in the Batocera controller settings, because it's not running on the drivers integrated into the OS. It'll still work just fine though.
+
+There is most likely an alternative way to do all of this, but I'll just explain how I got it working.
+
+Step 1, downloading the needed drivers:
+First you need to get these files onto your Batocera partition (or a USB drive or something, mainly you need to be able to access them through Batocera.
+These files: https://github.com/TheDrHax/ds4drv-cemuhook
+
+Step 2, installing the drivers:
+To install the drivers you need to press F1 in your Batocera "home-screen" to open the file explorer.
+Open the directory that has the drivers in it, specifically the folder with the "setup.py" file.
+Run the terminal in that folder by pressing F4.
+Enter the following command:
+	"python3 setup.py install"
+This will install the drivers. Now don't reboot, because Batocera won't save the changes you made.
+If you want, you can try if the drivers are working.
+To do that, start them with the following command:
+	"python3 -m ds4drv --udp"
+The tool will now scan for controllers and you can pair your DS4 by holding the PS and SHARE buttons until it blinks.
+The LED will turn blue, when it's connected.
+Now switch to the file explorer again and open CEMU through the application shortcut you can find on left.
+Go to Options, and GamePad motion source. If you see something like this (AA:BB:CC:DD:EE:FF), it worked.
+Click that and select "by Slot" and "also use for buttons/axes" at the bottom.
+The changes you now made in Cemu will be overwritten when you launch your WiiU title from the EmulationStation/Batocera menu.
+So don't do that.
+
+Step 3, making the drivers start automatically on boot:
+We want to have our drivers start automatically, so we don't have to use a keyboard all the time.
+In order to do that, go to "/userdata/system/". create a new file named "custom.sh" if it doesn't already exist.
+This file will contain the command, that starts the drivers, like so:
+	"#! python3 -m ds4drv --udp"
+This script will always be executed on boot.
+
+Step 4, be able to use gyro when launching a game from the Emulation Station:
+Launching the game from Batocera/EmulationStation will always overwrite the "cemuhook" settings you made at the end of step 2.
+I found out that these settings are saved in the "cemuhook.ini" in "/userdata/system/configs/cemu".
+So we need to make sure it doesn't get overwritten. First I thought to just make it "read only" but that doesn't work.
+I searched for the reason it gets overwritten in the first place and here's the solution.
+Navigate to "/usr/lib/python3.9/site-packages/configgen/generators/cemu".
+Find and open "cemuGenerator.py", then hit CTRL+F and search for "cemuhook" until you find the following passage:
+	 # Copy cemuhook for secure upgrade
+         if not os.path.exists(cemu_hook) or not filecmp.cmp(cemuDatadir + "/cemuhook.ini", cemu_hook):
+            shutil.copyfile(cemuDatadir + "/cemuhook.ini", cemu_hook)
+Apparently, when launching games from Batocera/EmulationStation, Cemu doesn't just use cemuhook.ini but rather creates a copy to use.
+I guess, I'm certainly not an expert. Anyway, we just need to deactivate two lines of code using "#", like so:
+	 # Copy cemuhook for secure upgrade
+         #if not os.path.exists(cemu_hook) or not filecmp.cmp(cemuDatadir + "/cemuhook.ini", cemu_hook):
+            #shutil.copyfile(cemuDatadir + "/cemuhook.ini", cemu_hook)
+Once this is done, save, and you will be able to launch games from Batcera/EmulationStation. But before that,
+we need to make sure Batocera doesn't undo all of our work when just rebooting.
+
+Step 5, saving the changes we made:
+Open the terminal by pressing F4 (I think it doesn't matter where you open it).
+Enter the following:
+	"batocera-save-overlay"
+You will see if the command was successfully executed.
+Now you should be able to reboot the system. Check if everything works as described in the result in the beginning of this guide.
+I think the changes will be overwritten once you update the OS (Batocera), but other than that it should work.
+I hope I could help and I know that this is probably a very unconventional "post" or "entry" or whatever but hey, if it works, it works.
+See you down the road!
+Graugnarz
